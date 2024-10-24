@@ -1,10 +1,13 @@
 import java.awt.BorderLayout
+import java.awt.Desktop
 import java.awt.Dimension
+import java.awt.FlowLayout
 import javax.swing.*
+import javax.swing.event.HyperlinkEvent
 
 class MarkdownViewerApp : JFrame() {
 
-    private val textArea: JTextArea = JTextArea()
+    private val editorPane: JEditorPane = JEditorPane()
     private val loadButton: JButton = JButton("Load Markdown File")
 
     init {
@@ -17,22 +20,34 @@ class MarkdownViewerApp : JFrame() {
         size = Dimension(1200, 800)
         setLocationRelativeTo(null)
 
-        textArea.isEditable = false
-        val scrollPane = JScrollPane(textArea)
+        editorPane.isEditable = false
+        editorPane.contentType = "text/html"
 
-        // Add a listener for the load button
-        val loadButtonListener = LoadButtonListener(this, textArea)
-        loadButton.addActionListener(loadButtonListener)
+        editorPane.addHyperlinkListener { e ->
+            if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                val url = e.url
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().browse(url.toURI())
+                }
+            }
+        }
 
-        // Add components to the layout
+        val scrollPane = JScrollPane(editorPane)
+
+        loadButton.addActionListener(LoadButtonListener(editorPane, this))
+
+        val buttonPanel = JPanel().apply {
+            layout = FlowLayout(FlowLayout.CENTER)
+        }
+        buttonPanel.add(loadButton)
+
         layout = BorderLayout()
         add(scrollPane, BorderLayout.CENTER)
-        add(loadButton, BorderLayout.SOUTH)
+        add(buttonPanel, BorderLayout.SOUTH)
     }
 }
 
 fun main() {
-    // Run the application
     SwingUtilities.invokeLater {
         val viewer = MarkdownViewerApp()
         viewer.isVisible = true
